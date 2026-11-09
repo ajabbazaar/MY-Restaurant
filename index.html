@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Restaurant POS & Billing</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--ink:#18212d;--muted:#738092;--line:#e5e9ef;--accent:#f2ad19;--green:#16834a;--red:#bd3434;--nav:#17202b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px Arial, sans-serif}header{background:var(--nav);color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}header h2{margin:0;font-size:20px}header small{color:#cbd3dd}nav{display:flex;gap:6px;flex-wrap:wrap}.nav{border:0;background:#303b49;color:#fff;padding:10px 13px;border-radius:8px;cursor:pointer}.nav.active{background:var(--accent);color:#171717;font-weight:bold}main{max-width:1500px;margin:auto;padding:20px}.view{display:none}.view.active{display:block}.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}h1{font-size:25px;margin:0 0 5px}h3{margin:0 0 14px}.muted{color:var(--muted)}.panel{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:17px;margin-bottom:15px}.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,.85fr);gap:15px}.two{display:grid;grid-template-columns:1fr 1fr;gap:15px}.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;margin-top:13px}.food{background:white;border:1px solid var(--line);border-radius:10px;padding:13px;text-align:left;cursor:pointer;min-height:85px}.food:hover{border-color:var(--accent)}.food b,.food span{display:block}.food b{margin:7px 0}.food span{color:var(--muted);font-size:12px}button,.btn{border:0;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:650;background:#edf0f4;color:var(--ink);text-decoration:none;display:inline-block}.primary{background:var(--accent);color:#171717}.dark{background:var(--nav);color:white}.danger{background:#bd3434;color:white}.success{background:#16834a;color:white}.full{width:100%;margin-top:8px}input,select,textarea{width:100%;padding:10px;border:1px solid #dce2e9;border-radius:8px;background:white;font:inherit;color:var(--ink)}label{display:block;font-weight:600;margin:10px 0}label input,label select,label textarea{margin-top:6px}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.toolbar{display:flex;gap:9px}.cart{min-height:150px}.cartrow{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.cartrow small{display:block;color:var(--muted);margin-top:4px}.qty{display:flex;align-items:center;gap:6px}.qty button{padding:5px 9px}.totals{border-top:1px solid var(--line);margin-top:12px;padding-top:8px}.totals div{display:flex;justify-content:space-between;padding:6px 0}.grand{font-size:19px;border-top:1px solid var(--line);margin-top:5px;padding-top:12px!important}.billpanel{position:sticky;top:12px;align-self:start}.tablegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}.tablecard{background:white;border:1px solid var(--line);border-radius:12px;padding:16px}.status{display:inline-block;padding:5px 9px;border-radius:20px;background:#e5f5eb;color:#167344;margin-top:9px;font-size:12px}.busy{background:#fff0d8;color:#8b5a00}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:15px}.stat{background:white;border:1px solid var(--line);border-radius:12px;padding:16px}.stat span{display:block;color:var(--muted);margin-bottom:7px}.stat b{font-size:22px}table{border-collapse:collapse;width:100%}th,td{text-align:left;border-bottom:1px solid var(--line);padding:9px}th{font-size:12px;color:var(--muted)}.scroll{overflow:auto}#toast{position:fixed;right:18px;bottom:18px;background:#17202b;color:white;padding:12px 17px;border-radius:9px;display:none;z-index:20}.hint{font-size:12px;color:var(--muted);line-height:1.5}.hidden{display:none!important}
+@media(max-width:900px){main{padding:12px}.grid,.two{grid-template-columns:1fr}.billpanel{position:static}.stats{grid-template-columns:1fr 1fr}header{align-items:flex-start;flex-direction:column}}
+@media print{body{background:white}}
+#printArea{display:none}
+ .brand-wrap{display:flex;align-items:center;gap:12px}.brand-logo{width:54px;height:54px;object-fit:contain;border-radius:10px;background:#fff;padding:3px;box-shadow:0 2px 8px #0002}
+@media(max-width:700px){.brand-logo{width:42px;height:42px}}
+
+/* Fast POS workspace */
+@media(min-width:901px){
+ #pos .grid{align-items:start;grid-template-columns:minmax(0,1.45fr) minmax(350px,.9fr);height:calc(100vh - 178px);min-height:520px}
+ #pos .grid>.panel:first-child{height:100%;max-height:100%;overflow:auto;margin:0}
+ #pos .billpanel{position:relative;top:auto;height:100%;max-height:100%;overflow:auto;margin:0}
+ #pos .products{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+ #pos .food{min-height:70px;padding:10px}
+ #pos .billpanel .cart{min-height:70px}
+ #pos .head{margin-bottom:10px}
+ #pos .panel{padding:13px}
+}
+@media(max-width:900px){
+ #pos .grid{display:flex;flex-direction:column}
+ #pos .grid>.panel:first-child{order:1;width:100%}
+ #pos .billpanel{order:2;width:100%;max-height:none;overflow:visible}
+ #pos .products{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #pos .food{min-height:76px;padding:10px}
+ #pos .head h1{font-size:21px}
+ #pos .billpanel .full{padding:12px}
+ header nav{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+ header nav .nav{white-space:nowrap}
+}
+
+.tablecard{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;cursor:pointer;min-height:120px;border:1px solid #d8dee8;border-radius:13px;padding:14px;background:#fff;color:#17202b}
+.tablecard strong{font-size:13px;margin-top:4px}
+.tablecard small{color:#667085}
+.tablecard.table-free{border-left:5px solid #16a36a}
+.tablecard.table-busy{border-left:5px solid #e08a22;background:#fffaf2}
+.tablecard:focus{outline:3px solid #7aa7ff}.food.out-stock{opacity:.38;filter:blur(1.2px) grayscale(.8);cursor:not-allowed;pointer-events:none}.stock-pill{display:inline-block;padding:3px 7px;border-radius:20px;background:#e7f6ed;color:#167344;font-size:11px;margin-top:5px}.stock-pill.low{background:#fff0d8;color:#8b5a00}.stock-pill.none{background:#fde8e8;color:#a32121}.size-prices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style></head><body>
+<div id="loginGate" style="position:fixed;inset:0;background:#17202b;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px">
+ <form id="loginForm" style="background:#fff;width:min(390px,100%);padding:28px;border-radius:18px;box-shadow:0 18px 60px #0005">
+  <div style="text-align:center;font-size:38px;margin-bottom:8px">🔐</div>
+  <h2 style="text-align:center;margin:0 0 6px">Restaurant POS Login</h2>
+  <p style="text-align:center;color:#738092;margin:0 0 18px">Enter your access password to continue.</p>
+  <label>Password<input id="loginPassword" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter password" required autofocus></label>
+  <p id="loginError" style="color:#bd3434;display:none;font-size:13px">Incorrect password. Please try again.</p>
+  <button class="primary full" type="submit">Login</button>
+  <p style="font-size:11px;color:#738092;text-align:center;margin:14px 0 0">First login on this device requires the starter password.</p>
+ </form>
+</div>
+<header><div class="brand-wrap"><img id="brandLogo" class="brand-logo" alt="Restaurant logo" style="display:none"><div><h2 id="brand">MY RESTAURANT</h2><small>LOCAL RESTAURANT POS · OFFLINE BILLING</small></div></div><nav>
+<button class="nav active" data-view="pos">POS Billing</button><button class="nav" data-view="tables">Tables</button><button class="nav" data-view="reports">Sales Reports</button><button class="nav" data-view="menu">Menu</button><button class="nav" data-view="expenses">Expenses</button><button class="nav" data-view="history">Bill History</button><button class="nav" data-view="settings">Settings & Backup</button><button class="nav" id="logoutBtn" type="button">Logout</button></nav></header>
+<main>
+<section id="pos" class="view active"><div class="head"><div><h1>New Order</h1><div class="muted">Tap a food item to add it to the current bill.</div></div><button class="primary" id="newOrder">＋ New Order</button></div>
+<div class="grid"><div class="panel"><div class="toolbar"><input id="search" placeholder="Search food item..."><select id="catFilter"><option value="">All categories</option></select></div><div id="products" class="products"></div></div>
+<div class="panel billpanel"><h3>Current Bill <small id="orderTag" class="muted">No order</small></h3><div class="row"><select id="orderType"><option>Dine In</option><option>Takeaway</option><option>Delivery</option></select><select id="tableSelect"><option value="">Select table</option></select></div><label>Customer name (optional)<input id="customer" placeholder="Walk-in customer"></label><div id="cart" class="cart muted">No items added yet.</div><div class="totals"><div><span>Subtotal</span><b id="subtotal">₹0.00</b></div><div><span>Discount (₹)</span><input id="discount" type="number" min="0" value="0" style="max-width:110px"></div><div><span>Tax</span><b id="tax">₹0.00</b></div><div><span>Service charge</span><b id="service">₹0.00</b></div><div class="grand"><span>Total</span><b id="total">₹0.00</b></div></div><button class="primary full" id="checkout">🖨️ Print Bill / Payment</button></div></div></section>
+<section id="tables" class="view"><div class="head"><div><h1>Table Management</h1><p class="muted">Create tables and check availability.</p></div><button class="primary" id="addTable">＋ Add Table</button></div><div id="tableGrid" class="tablegrid"></div></section>
+<section id="reports" class="view"><div class="head"><div><h1>Sales Reports</h1><p class="muted">Daily sales, collection, expenses and best sellers.</p></div><input type="date" id="reportDate" style="max-width:180px"></div><div id="reportCards" class="stats"></div><div class="two"><div class="panel"><h3>Payment Summary</h3><div id="paymentReport"></div></div><div class="panel"><h3>Top Selling Items</h3><div id="bestReport"></div></div></div><div class="panel"><h3>Monthly / Yearly Overview</h3><div class="row"><input type="month" id="monthPick"><button class="secondary" id="monthReport">Show Month</button><input type="number" id="yearPick" min="2000" max="2100" style="max-width:110px"><button class="secondary" id="yearReport">Show Year</button></div><div id="periodResult" style="margin-top:12px"></div></div></section>
+<section id="menu" class="view"><div class="head"><div><h1>Menu Management</h1><p class="muted">Add categories and food items with prices.</p></div></div><div class="two"><div class="panel"><h3>Add Food Item</h3><form id="productForm"><label>Food name<input name="name" required></label><label>Category<select name="category" id="productCategory"></select></label><label>Price (₹)<input name="price" type="number" min="0" step=".01" required></label><label>Stock quantity<input name="stock" type="number" min="0" step="1" value="0" required><small class="hint">স্টক ০ হলে POS-এ আইটেমটি বন্ধ/ব্লার দেখাবে।</small></label><div class="size-prices"><label>Half Price (₹)<input name="halfPrice" type="number" min="0" step=".01" placeholder="Optional"></label><label>Full Price (₹)<input name="fullPrice" type="number" min="0" step=".01" placeholder="Optional"></label></div><small class="hint">Half / Full দরকার না হলে ফাঁকা রাখুন।</small><label>Food type<select name="veg"><option value="1">Vegetarian</option><option value="0">Non-Vegetarian</option></select></label><button class="primary" type="submit">Save Product</button><button type="button" class="secondary" id="cancelProductEdit" style="display:none" onclick="cancelProductEdit()">Cancel Edit</button></form></div><div class="panel"><h3>Add Category</h3><form id="categoryForm"><label>Category name<input name="name" required></label><button class="primary">Add Category</button></form><h3 style="margin-top:22px">Menu Items</h3><div id="menuList" class="scroll"></div></div></div></section>
+<section id="expenses" class="view"><div class="head"><div><h1>Expenses</h1><p class="muted">Record restaurant operating costs.</p></div></div><div class="two"><div class="panel"><h3>Add Expense</h3><form id="expenseForm"><label>Expense title<input name="title" required></label><label>Amount (₹)<input name="amount" type="number" min=".01" step=".01" required></label><label>Category<input name="category" placeholder="Rent, salary, supplies"></label><button class="primary">Save Expense</button></form></div><div class="panel"><h3>Recent Expenses</h3><div id="expenseList" class="scroll"></div></div></div></section>
+<section id="history" class="view"><div class="head"><div><h1>Bill History</h1><p class="muted">Find and reprint previous bills.</p></div><input type="date" id="historyDate" style="max-width:180px"></div><div class="panel scroll" id="historyList"></div></section>
+<section id="settings" class="view"><div class="head"><div><h1>Settings & Backup</h1><p class="muted">Restaurant details, tax and local data tools.</p></div></div><div class="two"><div class="panel"><h3>Restaurant Details</h3><form id="settingsForm"><label>Restaurant name<input name="restaurant_name"></label><label>Address<input name="address"></label><label>Phone<input name="phone"></label><label>GSTIN<input name="gstin"></label><label>Restaurant Logo<input type="file" id="logoUpload" accept="image/*"></label><img id="logoPreview" style="max-width:120px;max-height:90px;object-fit:contain;display:none"><label>UPI ID / VPA<input name="upi_id" placeholder="yourname@upi"></label><label>UPI Payee Name<input name="upi_name" placeholder="Restaurant name"></label><label>Tax %<input name="tax_percent" type="number" min="0" step=".01"></label><label>Service charge %<input name="service_percent" type="number" min="0" step=".01"></label><button class="primary">Save Settings</button></form></div><div class="panel"><h3>Local Data Backup</h3><p class="hint">All records are stored in this browser on this device. Export backups regularly and keep them safe.</p><button class="primary" id="backup">Download Full Backup (JSON)</button><label>Restore backup file<input type="file" id="restoreFile" accept=".json,application/json"></label><button class="danger" id="restore">Restore Backup</button><hr><button class="secondary" id="resetLogin">Reset Login (Ask Password Again)</button><hr><button class="secondary" id="printTest">Test Receipt Print</button><p class="hint">Thermal receipt printing only. Select your 58mm / 80mm thermal printer in the browser print dialog.</p></div></div></section>
+</main><div id="toast"></div><div id="printArea"></div>
+<div id="billActionModal" class="hidden" style="position:fixed;inset:0;background:#0008;z-index:100;display:flex;align-items:center;justify-content:center;padding:18px">
+ <div style="background:#fff;border-radius:14px;padding:22px;max-width:380px;width:100%;box-shadow:0 12px 40px #0003">
+  <h3 style="margin:0 0 8px">Bill Ready</h3><p class="hint">বিলটি সেভ হয়েছে। Thermal Printer-এ প্রিন্ট করুন অথবা ইমেজ হিসেবে WhatsApp-এ শেয়ার করুন।</p>
+  <button class="primary full" id="actionPrint">🧾 Print Thermal Bill</button>
+  <button class="success full" id="actionWhatsApp">📲 WhatsApp-এ Bill Image পাঠান</button>
+  <button class="full" id="actionClose">Close</button>
+ </div>
+</div>
+<div id="paymentModal" class="hidden" style="position:fixed;inset:0;background:#0009;z-index:120;display:flex;align-items:center;justify-content:center;padding:16px"><div style="background:white;border-radius:16px;padding:22px;width:min(440px,100%);max-height:90vh;overflow:auto"><h2>Payment Method</h2><p>পেমেন্টের ধরন নির্বাচন করুন</p><div id="payTotal" style="font-size:30px;text-align:center;font-weight:bold"></div><button class="primary full" id="payPrintBill" style="font-size:19px;padding:16px;margin:12px 0">🧾 PRINT BILL (THERMAL)</button><div class="two"><button class="primary" id="payCash">💵 CASH</button><button class="success" id="payUPI">📲 UPI App</button></div>
+ <button class="dark full" id="payScanQR">▦ Scan QR Code</button>
+ <button class="full" id="payConfirmUPI">Confirm UPI Payment Received</button>
+ <h3>Split Payment</h3><label>Cash Amount<input type="number" id="splitCash" min="0" step=".01" value="0"></label><label>UPI Amount<input type="number" id="splitUPI" min="0" step=".01" value="0"></label><button class="dark full" id="paySplit">Confirm Cash + UPI</button><button class="full" id="payDue">Pay Later / Due</button><button class="full" id="payCancel">Cancel</button></div></div>
+<div id="qrFull" class="hidden" style="position:fixed;inset:0;background:#fff;z-index:150;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center"><button id="qrClose" style="position:absolute;right:16px;top:16px">✕ Close</button><h2 id="qrRestaurant">UPI PAYMENT</h2><div id="qrAmount" style="font-size:34px;font-weight:bold;margin:12px"></div><img id="qrImage" alt="UPI Payment QR" style="width:min(78vw,360px);height:min(78vw,360px);object-fit:contain;border:1px solid #ddd;border-radius:12px"><p id="qrHint" class="hint">Scan করে পেমেন্ট করুন</p><button class="success" id="qrPaid">Payment Received – Confirm</button></div>
+<script>
+const KEY='restaurant_pos_html_v1';
+const defaults=()=>({settings:{restaurant_name:'MY RESTAURANT',address:'',phone:'',gstin:'',tax_percent:0,service_percent:0,upi_id:'',upi_name:'',logo_data:''},categories:['Rice & Meals','Snacks','Drinks','Main Course'],products:[{id:1,name:'Veg Fried Rice',category:'Rice & Meals',price:120,veg:1,stock:9999},{id:2,name:'Chicken Fried Rice',category:'Rice & Meals',price:160,veg:0,stock:9999},{id:3,name:'Paneer Chilli',category:'Main Course',price:180,veg:1,stock:9999},{id:4,name:'Chicken Curry',category:'Main Course',price:220,veg:0,stock:9999},{id:5,name:'French Fries',category:'Snacks',price:90,veg:1,stock:9999},{id:6,name:'Cold Drink',category:'Drinks',price:40,veg:1,stock:9999}],tables:Array.from({length:12},(_,i)=>({id:i+1,name:'Table '+(i+1),seats:4})),orders:[],expenses:[],nextOrder:1});
+let data;
+try{data=JSON.parse(localStorage.getItem(KEY))||null}catch{data=null}
+if(!data){try{data=JSON.parse(localStorage.getItem(KEY+'_last_good'))||null}catch{data=null}}
+if(!data)data=defaults();
+data.settings=Object.assign({restaurant_name:'MY RESTAURANT',address:'',phone:'',gstin:'',tax_percent:0,service_percent:0,upi_id:'',upi_name:'',logo_data:''},data.settings||{});
+let cart=[],activeOrder=null;
+const $=id=>document.getElementById(id), money=n=>'₹'+Number(n||0).toFixed(2),today=()=>new Date().toISOString().slice(0,10);
+function persist(){
+ try{
+  const packed=JSON.stringify(data);
+  localStorage.setItem(KEY,packed);
+  localStorage.setItem(KEY+'_last_good',packed);
+  return true;
+ }catch(e){
+  toast('Storage full or unavailable. Download a backup from Settings.');
+  return false;
+ }
+}
+const DRAFT_KEY=KEY+'_draft';
+function saveDraft(){
+ try{localStorage.setItem(DRAFT_KEY,JSON.stringify({cart,activeOrderId:activeOrder?.id||null,customer:$('customer')?.value||'',discount:$('discount')?.value||0,orderType:$('orderType')?.value||'Dine In',tableId:$('tableSelect')?.value||''}))}catch(e){}
+}
+function restoreDraft(){
+ try{
+  const d=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
+  if(!d)return;
+  cart=Array.isArray(d.cart)?d.cart:[];
+  activeOrder=d.activeOrderId?data.orders.find(o=>String(o.id)===String(d.activeOrderId))||null:null;
+  if($('customer'))$('customer').value=d.customer||'';
+  if($('discount'))$('discount').value=d.discount||0;
+  if($('orderType'))$('orderType').value=d.orderType||'Dine In';
+  if($('tableSelect'))$('tableSelect').value=d.tableId||'';
+ }catch(e){}
+}
+function toast(s){$('toast').textContent=s;$('toast').style.display='block';setTimeout(()=>$('toast').style.display='none',2400)}
+function go(v){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===v));document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x.dataset.view===v));if(v==='reports')report();if(v==='history')history()}
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>go(b.dataset.view));
+function paymentPageUrl(amount){
+ const n=Number(amount||0);
+ const value=Number.isInteger(n)?String(n):n.toFixed(2);
+ return 'https://pay.ajabbazaar.in/?amount='+encodeURIComponent(value);
+}
+function upiIntentForAmount(amount){
+ const id=(data.settings.upi_id||'').trim();
+ const payee=data.settings.upi_name||data.settings.restaurant_name||'AJAB BAZAAR';
+ return 'upi://pay?pa='+encodeURIComponent(id)+'&pn='+encodeURIComponent(payee)+'&am='+Number(amount||0).toFixed(2)+'&cu=INR&tn='+encodeURIComponent('AJAB BAZAAR Payment');
+}
+function syncBrandLogo(){let el=$('brandLogo'),src=data.settings&&data.settings.logo_data;if(src){el.src=src;el.style.display='block'}else{el.removeAttribute('src');el.style.display='none'}}
+function initUI(){ $('brand').textContent=data.settings.restaurant_name;syncBrandLogo();$('catFilter').innerHTML='<option value="">All categories</option>'+data.categories.map(x=>`<option>${esc(x)}</option>`).join('');$('productCategory').innerHTML=data.categories.map(x=>`<option>${esc(x)}</option>`).join('');$('tableSelect').innerHTML='<option value="">Select table</option>'+data.tables.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');$('reportDate').value=today();$('historyDate').value=today();$('yearPick').value=new Date().getFullYear();$('monthPick').value=today().slice(0,7);products();tables();menu();expenses();settingsForm();calc()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function reservedForActive(productId){return Number(activeOrder?.stockUsage?.[String(productId)]||0)}
+function availableStock(p){return Math.max(0,Number(p.stock)||0)+reservedForActive(p.id)}
+function cartStockUse(productId){return cart.filter(x=>String(x.product_id)===String(productId)).reduce((n,x)=>n+(Number(x.qty)||0)*(Number(x.stockUnits)||1),0)}
+function stockAvailableForNew(p){return Math.max(0,availableStock(p)-cartStockUse(p.id))}
+function products(){let q=$('search').value.toLowerCase(),cat=$('catFilter').value;let list=data.products.filter(p=>p.name.toLowerCase().includes(q)&&(!cat||p.category===cat));$('products').innerHTML=list.map(p=>{let stock=stockAvailableForNew(p),empty=stock<=0,low=stock>0&&stock<=5;let size=p.halfPrice!=null||p.fullPrice!=null;return `<button class="food ${empty?'out-stock':''}" data-id="${p.id}" ${empty?'disabled':''}><span>${p.veg?'🟢 Veg':'🔴 Non-Veg'} · ${esc(p.category)}</span><b>${esc(p.name)}</b><strong>${size?`Half ${money(p.halfPrice??p.price)} · Full ${money(p.fullPrice??p.price)}`:money(p.price)}</strong><small class="stock-pill ${empty?'none':low?'low':''}">${empty?'OUT OF STOCK':'Stock: '+stock}</small></button>`}).join('')||'<p class="muted">No items found.</p>';document.querySelectorAll('.food:not(.out-stock)').forEach(b=>b.onclick=()=>add(+b.dataset.id))}
+$('search').oninput=products;$('catFilter').onchange=products;
+function add(id){let p=data.products.find(x=>x.id===id);if(!p)return;let size='';let price=Number(p.price)||0,units=1;if(p.halfPrice!=null||p.fullPrice!=null){let choice=prompt(`Select size for ${p.name}:\n1 = Half (${money(p.halfPrice??p.price)})\n2 = Full (${money(p.fullPrice??p.price)})`,'2');if(choice===null)return;if(!['1','2'].includes(choice))return toast('1 অথবা 2 নির্বাচন করুন');size=choice==='1'?'Half':'Full';price=Number(choice==='1'?(p.halfPrice??p.price):(p.fullPrice??p.price));units=choice==='1'?.5:1;}let stock=stockAvailableForNew(p);let i=cart.find(x=>x.product_id===id&&x.size===size);let required=units;if(stock+0.0001<required)return toast('এই আইটেমের স্টক শেষ');if(i){if(stock+0.0001<units)return toast('এই আইটেমের স্টক যথেষ্ট নেই');i.qty++;}else cart.push({product_id:p.id,name:p.name+(size?' ('+size+')':''),baseName:p.name,size,price,qty:1,stockUnits:units,note:''});drawCart()}
+function drawCart(){saveDraft();$('cart').innerHTML=cart.length?cart.map((x,i)=>`<div class="cartrow"><div><b>${esc(x.name)}</b><small>${money(x.price)} × ${x.qty} = ${money(x.price*x.qty)}</small></div><div class="qty"><button onclick="qty(${i},-1)">−</button>${x.qty}<button onclick="qty(${i},1)">+</button><button onclick="removeItem(${i})">×</button></div></div>`).join(''):'No items added yet.';calc();products()}
+function qty(i,n){let x=cart[i];if(n>0){let p=data.products.find(p=>String(p.id)===String(x.product_id));if(p&&stockAvailableForNew(p)<(Number(x.stockUnits)||1))return toast('স্টক শেষ বা যথেষ্ট নেই');}cart[i].qty+=n;if(cart[i].qty<=0)cart.splice(i,1);drawCart()}function removeItem(i){cart.splice(i,1);drawCart()}
+function calc(){let sub=cart.reduce((s,x)=>s+x.qty*x.price,0),discount=Math.max(0,+$('discount').value||0),base=Math.max(0,sub-discount),tax=base*(+data.settings.tax_percent||0)/100,service=base*(+data.settings.service_percent||0)/100;$('subtotal').textContent=money(sub);$('tax').textContent=money(tax);$('service').textContent=money(service);$('total').textContent=money(base+tax+service);return{sub,discount,tax,service,total:Math.round((base+tax+service)*100)/100}}
+$('discount').oninput=()=>{calc();saveDraft()};$('customer').oninput=saveDraft;$('orderType').onchange=saveDraft;$('tableSelect').onchange=saveDraft;
+function makeOrder(){if(!cart.length)throw Error('Please add food items.');let type=$('orderType').value,tableId=type==='Dine In'?+$('tableSelect').value:null;if(type==='Dine In'&&!tableId)throw Error('Select a table for Dine In.');let o={id:data.nextOrder++,billNo:'BILL-'+today().replaceAll('-','')+'-'+String(data.nextOrder-1).padStart(4,'0'),type,tableId,tableName:data.tables.find(t=>t.id===tableId)?.name||'',customer:$('customer').value,items:cart.map(x=>({...x})),...calc(),status:'Open',created:new Date().toISOString(),closed:null,payment:'',paid:0};return o}
+function saveOpen(){
+ if(!cart.length)throw Error('Add items first.');
+ let totals=calc(),type=$('orderType').value,tableId=type==='Dine In'?Number($('tableSelect').value):null;
+ if(type==='Dine In'&&!tableId)throw Error('Select an available table.');
+ let occupied=tableId?openOrderForTable(tableId):null;
+ if(occupied&&(!activeOrder||String(occupied.id)!==String(activeOrder.id)))throw Error('এই টেবিলে ইতিমধ্যে একটি Open Bill আছে। Table Management থেকে সেই বিল খুলুন।');
+ if(activeOrder){
+  Object.assign(activeOrder,{type,tableId,tableName:data.tables.find(t=>String(t.id)===String(tableId))?.name||'',items:cart.map(x=>({...x})),...totals,customer:$('customer').value});
+  persist();tables();toast('Open bill updated. Table remains Occupied.');return;
+ }
+ let o=makeOrder();data.orders.push(o);activeOrder=o;persist();$('orderTag').textContent=o.billNo;tables();toast('Open order saved. Table is now Occupied.');
+}
+
+$('newOrder').onclick=()=>{if(cart.length&&!confirm('Clear current cart?'))return;cart=[];activeOrder=null;$('orderTag').textContent='No order';$('customer').value='';$('discount').value=0;$('tableSelect').value='';localStorage.removeItem(DRAFT_KEY);drawCart();tables()};
+let pendingBill=null,pendingUpiAmount=0;
+function usageFor(items){let u={};(items||[]).forEach(x=>{let id=String(x.product_id);u[id]=(u[id]||0)+(Number(x.qty)||0)*(Number(x.stockUnits)||1)});return u}
+function reserveOrderStock(order,newItems){let old=order.stockUsage||{},next=usageFor(newItems);for(let id of new Set([...Object.keys(old),...Object.keys(next)])){let p=data.products.find(x=>String(x.id)===String(id));if(!p)continue;let delta=(next[id]||0)-(old[id]||0);if(delta>0&&Number(p.stock)<delta)return `স্টক যথেষ্ট নেই: ${p.name} (Available ${p.stock})`;}for(let id of new Set([...Object.keys(old),...Object.keys(next)])){let p=data.products.find(x=>String(x.id)===String(id));if(!p)continue;let delta=(next[id]||0)-(old[id]||0);p.stock=Math.max(0,(Number(p.stock)||0)-delta);}order.stockUsage=next;order.stockApplied=true;return ''}
+$('checkout').onclick=()=>{try{
+ if(!cart.length)throw Error('Add items first.');
+ let type=$('orderType').value,tableId=type==='Dine In'?Number($('tableSelect').value):null;
+ if(type==='Dine In'&&!tableId)throw Error('Select an available table.');
+ let occupied=tableId?openOrderForTable(tableId):null;
+ if(occupied&&(!activeOrder||String(occupied.id)!==String(activeOrder.id)))throw Error('এই টেবিলে অন্য একটি Open Bill চলছে। সেটি Table Management থেকে খুলুন।');
+ if(!activeOrder){activeOrder=makeOrder();data.orders.push(activeOrder)}
+ else Object.assign(activeOrder,{type,tableId,tableName:data.tables.find(t=>String(t.id)===String(tableId))?.name||'',items:cart.map(x=>({...x})),...calc(),customer:$('customer').value});
+ let stockErr=reserveOrderStock(activeOrder,cart);if(stockErr)throw Error(stockErr);pendingBill=activeOrder;persist();tables();products();openPaymentFor(pendingBill)}catch(e){toast(e.message)}};
+function openPaymentFor(o){pendingBill=o;let due=Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0));$('payTotal').textContent='Due: '+money(due)+' / Total: '+money(o.total);$('splitCash').value='0';$('splitUPI').value=due.toFixed(2);$('paymentModal').classList.remove('hidden')}
+function showPaymentQR(amount){let id=(data.settings.upi_id||'').trim();if(!id){toast('আগে Settings-এ UPI ID দিন');return false}let name=data.settings.upi_name||data.settings.restaurant_name||'Restaurant';let intent=upiIntentForAmount(amount);$('qrRestaurant').textContent=name;$('qrAmount').textContent=money(amount);$('qrImage').src='https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=16&data='+encodeURIComponent(intent);$('qrHint').textContent='QR স্ক্যান করলে ফোনের UPI App খুলবে এবং '+money(amount)+' পেমেন্টের Amount আগে থেকেই সেট থাকবে।';$('qrFull').classList.remove('hidden');return true}
+function finalizePayment(method,cash,upi){
+ if(!pendingBill)return;
+ let o=pendingBill,total=Number(o.total)||0,already=Number(o.paid)||0,due=Math.max(0,total-already);
+ cash=Math.max(0,Number(cash)||0);upi=Math.max(0,Number(upi)||0);let received=cash+upi;
+ if(method==='Due'||received<=0){o.payment=already>0?(o.payment||'')+' + Due':'Due';o.status='Open';o.closed=null;persist();pendingBill=null;$('paymentModal').classList.add('hidden');$('qrFull').classList.add('hidden');tables();showBillActions(o);toast('পেমেন্ট বাকি রাখা হয়েছে। টেবিল Occupied থাকবে।');return}
+ if(received>due+0.01)return toast('বাকি টাকার চেয়ে বেশি পেমেন্ট দেওয়া যাবে না');
+ o.cashPaid=(Number(o.cashPaid)||0)+cash;o.upiPaid=(Number(o.upiPaid)||0)+upi;o.paid=already+received;
+ let methods=[];if(o.cashPaid>0)methods.push('Cash');if(o.upiPaid>0)methods.push('UPI');o.payment=methods.join(' + ')||method;
+ if(o.paid+0.01>=total){o.paid=total;o.status='Paid';o.closed=new Date().toISOString();persist();pendingBill=null;activeOrder=null;cart=[];$('paymentModal').classList.add('hidden');$('qrFull').classList.add('hidden');$('orderTag').textContent='No order';$('customer').value='';$('discount').value=0;drawCart();tables();showBillActions(o);toast('সম্পূর্ণ পেমেন্ট হয়েছে। টেবিল এখন Available।')}
+ else{o.status='Open';o.closed=null;persist();pendingBill=null;$('paymentModal').classList.add('hidden');$('qrFull').classList.add('hidden');tables();showBillActions(o);toast('আংশিক পেমেন্ট সেভ হয়েছে। বাকি '+money(total-o.paid)+'। টেবিল Occupied থাকবে।')}
+}
+$('payPrintBill').onclick=()=>{if(!pendingBill)return;printBill(pendingBill,'thermal')};
+$('payCash').onclick=()=>{if(pendingBill)finalizePayment('Cash',Math.max(0,pendingBill.total-(pendingBill.paid||0)),0)};
+$('payUPI').onclick=()=>{
+ if(!pendingBill)return;
+ if(!(data.settings.upi_id||'').trim())return toast('আগে Settings-এ UPI ID দিন');
+ window.location.href=upiIntentForAmount(Math.max(0,pendingBill.total-(pendingBill.paid||0)));
+};
+$('payScanQR').onclick=()=>{
+ if(!pendingBill)return;
+ pendingUpiAmount=Math.max(0,(Number(pendingBill.total)||0)-(Number(pendingBill.paid)||0));
+ if(showPaymentQR(pendingUpiAmount))$('paymentModal').classList.add('hidden');
+};
+$('payConfirmUPI').onclick=()=>{
+ if(!pendingBill)return;
+ finalizePayment('UPI',0,Math.max(0,(Number(pendingBill.total)||0)-(Number(pendingBill.paid)||0)));
+};
+$('paySplit').onclick=()=>{let c=Number($('splitCash').value)||0,u=Number($('splitUPI').value)||0;if(c+u>Math.max(0,pendingBill.total-(pendingBill.paid||0))+0.01)return toast('Cash + UPI বাকি টাকার বেশি হতে পারবে না');if(u>0){pendingUpiAmount=u;if(showPaymentQR(u)){$('qrHint').textContent='UPI '+money(u)+' + Cash '+money(c)+'। পেমেন্ট পাওয়ার পর Confirm চাপুন।';$('paymentModal').classList.add('hidden');$('qrPaid').dataset.cash=c}}else finalizePayment('Cash',c,0)};
+$('payDue').onclick=()=>finalizePayment('Due',0,0);
+$('payCancel').onclick=()=>$('paymentModal').classList.add('hidden');
+$('qrClose').onclick=()=>{$('qrFull').classList.add('hidden');if(pendingBill)$('paymentModal').classList.remove('hidden')};
+$('qrPaid').onclick=()=>{let c=Number($('qrPaid').dataset.cash)||0;finalizePayment(c?'Cash + UPI':'UPI',c,pendingUpiAmount)};
+function openOrderForTable(tableId){
+ return data.orders.find(o=>o.status==='Open'&&String(o.tableId)===String(tableId))||null;
+}
+function tables(){
+ const currentId=activeOrder?.tableId;
+ $('tableGrid').innerHTML=data.tables.map(t=>{
+  let open=openOrderForTable(t.id),busy=!!open;
+  return `<div class="tablecard ${busy?'table-busy':'table-free'}" role="button" tabindex="0" onclick="openTable('${t.id}')">
+   <b>${esc(t.name)}</b><p class="muted">${Number(t.seats)||0} seats</p>
+   <span class="status ${busy?'busy':''}">${busy?'Occupied · Open Bill':'Available · Empty'}</span>
+   ${busy?`<small>${esc(open.billNo)} · Total ${money(open.total)}</small><small>Paid: ${money(open.paid||0)} · Due: ${money(Math.max(0,(open.total||0)-(open.paid||0)))}</small><small>Payment: ${esc(open.payment||'Unpaid')}</small><strong>Open Bill / Payment</strong><button type="button" class="danger" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();deleteOrder('${open.id}')">Delete Open Order</button>`:'<strong>Select this table</strong>'}
+   ${!busy?`<button type="button" class="danger" style="padding:5px 9px;font-size:11px" onclick="event.stopPropagation();deleteTable('${t.id}')">Delete</button>`:''}
+  </div>`;
+ }).join('')||'<p class="muted">No tables added yet.</p>';
+ $('tableSelect').innerHTML='<option value="">Select available table</option>'+data.tables.map(t=>{
+  let open=openOrderForTable(t.id),isCurrent=String(currentId)===String(t.id);
+  let disabled=!!open&&!isCurrent;
+  return `<option value="${t.id}" ${disabled?'disabled':''}>${esc(t.name)}${open&&!isCurrent?' — Occupied':''}</option>`;
+ }).join('');
+ if(currentId!=null)$('tableSelect').value=String(currentId);
+}
+function openTable(id){
+ const t=data.tables.find(x=>String(x.id)===String(id));if(!t)return;
+ const open=openOrderForTable(t.id);
+ // Fast table switching: no confirmation dialogs. Occupied table opens its bill/payment directly.
+ if(open){
+  activeOrder=open;
+  cart=(open.items||[]).map(x=>({...x}));
+  $('orderType').value='Dine In';
+  $('tableSelect').value=String(t.id);
+  $('customer').value=open.customer||'';
+  $('discount').value=Number(open.discount)||0;
+  $('orderTag').textContent=open.billNo;
+  drawCart();go('pos');pendingBill=open;openPaymentFor(open);toast(t.name+' bill loaded. Payment options are open; close them to add more items.');
+ }else{
+  activeOrder=null;cart=[];
+  $('orderType').value='Dine In';
+  $('tableSelect').value=String(t.id);
+  $('customer').value='';$('discount').value=0;
+  $('orderTag').textContent='New · '+t.name;
+  drawCart();go('pos');toast(t.name+' is available. Start a new order.');
+ }
+ saveDraft();
+}
+function deleteTable(id){let t=data.tables.find(x=>String(x.id)===String(id));if(!t)return;if(openOrderForTable(id))return toast('এই টেবিলে Open Bill আছে, আগে বিল ক্লোজ করুন');if(!confirm('Delete '+t.name+'?'))return;data.tables=data.tables.filter(x=>String(x.id)!==String(id));persist();initUI();toast('Table deleted')}
+$('addTable').onclick=()=>{let name=prompt('Table name');if(!name)return;let seats=+(prompt('Number of seats','4')||4);if(data.tables.some(t=>t.name.toLowerCase()===name.toLowerCase()))return toast('Table name already exists');data.tables.push({id:Date.now(),name,seats});persist();initUI();toast('Table added')};
+function menu(){
+ $('menuList').innerHTML='<table><tr><th>Item</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr>'+
+ data.products.map(p=>{let locked=Number(p.id)<=6;return `<tr><td>${esc(p.name)} ${locked?'<small>(Default)</small>':''}</td><td>${esc(p.category)}</td><td>${p.halfPrice!=null||p.fullPrice!=null?`H ${money(p.halfPrice??p.price)} / F ${money(p.fullPrice??p.price)}`:money(p.price)}</td><td>${Number(p.stock)||0}</td><td><button onclick="editProduct('${p.id}')">Edit</button> <button class="danger" onclick="deleteProduct('${p.id}')">Delete</button></td></tr>`}).join('')+'</table>';
+}
+function editProduct(id){
+ let p=data.products.find(x=>String(x.id)===String(id));if(!p)return;
+ let f=$('productForm');f.elements.name.value=p.name||'';
+ f.elements.category.value=p.category||'';
+ f.elements.price.value=Number(p.price)||0;
+ f.elements.stock.value=Number(p.stock)||0;
+ f.elements.halfPrice.value=p.halfPrice??'';f.elements.fullPrice.value=p.fullPrice??'';
+ f.elements.veg.value=String(Number(p.veg)||0);
+ f.dataset.editId=String(p.id);
+ let btn=f.querySelector('button[type="submit"],button:not([type])');
+ if(btn)btn.textContent='Update Food Item';
+ let cancel=$('cancelProductEdit');if(cancel)cancel.style.display='inline-flex';
+ f.scrollIntoView({behavior:'smooth',block:'center'});
+ toast('এখন Add Food Item ফর্মে তথ্য পরিবর্তন করে Update চাপুন');
+}
+function cancelProductEdit(){
+ let f=$('productForm');delete f.dataset.editId;f.reset();
+ let btn=f.querySelector('button[type="submit"],button:not([type])');if(btn)btn.textContent='Save Product';
+ let cancel=$('cancelProductEdit');if(cancel)cancel.style.display='none';
+}
+function deleteProduct(id){let p=data.products.find(x=>String(x.id)===String(id));if(!p)return;if(!confirm('Delete '+p.name+'?'))return;data.products=data.products.filter(x=>String(x.id)!==String(id));persist();initUI();toast('Food item deleted')}
+$('productForm').onsubmit=e=>{
+ e.preventDefault();let form=e.target,f=new FormData(form);
+ let name=String(f.get('name')||'').trim(),price=Number(f.get('price')),stock=Number(f.get('stock')),halfRaw=f.get('halfPrice'),fullRaw=f.get('fullPrice'),halfPrice=halfRaw===''?null:Number(halfRaw),fullPrice=fullRaw===''?null:Number(fullRaw);
+ if(!name||!Number.isFinite(price)||price<0||!Number.isInteger(stock)||stock<0||(halfPrice!==null&&(!Number.isFinite(halfPrice)||halfPrice<0))||(fullPrice!==null&&(!Number.isFinite(fullPrice)||fullPrice<0)))return toast('Name, valid price এবং stock দিন');
+ let editId=form.dataset.editId;
+ if(editId){
+  let item=data.products.find(x=>String(x.id)===String(editId));if(!item)return toast('Item পাওয়া যায়নি');
+  item.name=name;item.category=f.get('category');item.price=price;item.stock=stock;item.veg=Number(f.get('veg'));if(halfPrice===null)delete item.halfPrice;else item.halfPrice=halfPrice;if(fullPrice===null)delete item.fullPrice;else item.fullPrice=fullPrice;
+  persist();cancelProductEdit();initUI();toast('Food item, price এবং stock updated');
+ }else{
+  data.products.push({id:Date.now(),name,category:f.get('category'),price,stock,veg:Number(f.get('veg')),...(halfPrice!==null?{halfPrice}:{}),...(fullPrice!==null?{fullPrice}:{})});
+  persist();form.reset();initUI();toast('Food item added');
+ }
+};
+$('categoryForm').onsubmit=e=>{e.preventDefault();let n=new FormData(e.target).get('name').trim();if(data.categories.includes(n))return toast('Category already exists');data.categories.push(n);persist();e.target.reset();initUI();toast('Category added')};
+function report(){let day=$('reportDate').value||today(),os=data.orders.filter(o=>o.status==='Paid'&&o.closed?.slice(0,10)===day),sales=os.reduce((s,o)=>s+o.total,0),paid=os.reduce((s,o)=>s+o.paid,0),exp=data.expenses.filter(x=>x.date.slice(0,10)===day).reduce((s,x)=>s+x.amount,0),discount=os.reduce((s,o)=>s+o.discount,0);$('reportCards').innerHTML=[['Bills',os.length],['Total Sales',money(sales)],['Collected',money(paid)],['Discount',money(discount)],['Expenses',money(exp)],['Sales − Expenses',money(sales-exp)]].map(x=>`<div class="stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');let methods={};os.forEach(o=>methods[o.payment]=(methods[o.payment]||0)+o.paid);$('paymentReport').innerHTML='<table><tr><th>Method</th><th>Collected</th></tr>'+Object.entries(methods).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${money(v)}</td></tr>`).join('')+'</table>';let items={};os.forEach(o=>o.items.forEach(i=>{items[i.name]=(items[i.name]||0)+i.qty}));$('bestReport').innerHTML='<table><tr><th>Food</th><th>Qty</th></tr>'+Object.entries(items).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('')+'</table>'}
+$('reportDate').onchange=report;
+function period(kind){let key=kind==='month'?$('monthPick').value:$('yearPick').value;let os=data.orders.filter(o=>o.status==='Paid'&&(kind==='month'?o.closed?.slice(0,7)===key:o.closed?.slice(0,4)===String(key)));let total=os.reduce((s,o)=>s+o.total,0);$('periodResult').innerHTML=`<h3>${kind==='month'?'Month':'Year'}: ${esc(key)}</h3><b>${os.length} bills · ${money(total)} sales</b>`}
+$('monthReport').onclick=()=>period('month');$('yearReport').onclick=()=>period('year');
+$('expenseForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target);data.expenses.push({id:Date.now(),title:f.get('title'),amount:+f.get('amount'),category:f.get('category')||'General',date:new Date().toISOString()});persist();e.target.reset();expenses();toast('Expense saved')};
+function expenses(){$('expenseList').innerHTML='<table><tr><th>Expense</th><th>Category</th><th>Amount</th></tr>'+data.expenses.slice().reverse().slice(0,100).map(x=>`<tr><td>${esc(x.title)}</td><td>${esc(x.category)}</td><td>${money(x.amount)}</td></tr>`).join('')+'</table>'}
+function history(){let d=$('historyDate').value||today(),os=data.orders.filter(o=>o.status==='Paid'&&o.closed?.slice(0,10)===d).reverse();$('historyList').innerHTML='<table><tr><th>Bill</th><th>Time</th><th>Type / Table</th><th>Total</th><th>Payment</th><th>Actions</th></tr>'+os.map(o=>`<tr><td>${esc(o.billNo)}</td><td>${new Date(o.closed).toLocaleTimeString()}</td><td>${esc(o.tableName||o.type)}</td><td>${money(o.total)}</td><td>${esc(o.payment)}</td><td><button onclick="reprint('${o.id}')">Print</button> <button class="success" onclick="shareBillImage('${o.id}')">WhatsApp Image</button> <button class="danger" onclick="deleteOrder('${o.id}')">Delete</button></td></tr>`).join('')+'</table>'}
+$('historyDate').onchange=history;
+function deleteOrder(id){let o=data.orders.find(x=>String(x.id)===String(id));if(!o)return;if(!confirm('Delete bill '+o.billNo+'?'))return;if(o.status==='Open'&&o.stockUsage){for(let [pid,qty] of Object.entries(o.stockUsage)){let p=data.products.find(x=>String(x.id)===String(pid));if(p)p.stock=(Number(p.stock)||0)+Number(qty||0);}}data.orders=data.orders.filter(x=>String(x.id)!==String(id));persist();history();tables();products();toast('Order deleted; stock restored where applicable')}
+function reprint(id){let o=data.orders.find(x=>String(x.id)===String(id));if(o)printBill(o,'thermal')}
+let lastCompletedBillId=null;
+function showBillActions(o){
+ lastCompletedBillId=o.id;
+ $('billActionModal').classList.remove('hidden');
+ $('actionPrint').onclick=()=>{ $('billActionModal').classList.add('hidden'); printBill(o,'thermal'); };
+ $('actionWhatsApp').onclick=()=>shareBillImage(o.id);
+ $('actionClose').onclick=()=> $('billActionModal').classList.add('hidden');
+}
+function loadReceiptImage(src){return new Promise((resolve,reject)=>{let im=new Image();if(/^https?:/.test(src))im.crossOrigin='anonymous';im.onload=()=>resolve(im);im.onerror=reject;im.src=src})}
+async function makeBillImage(o){
+ const st=data.settings||{},w=1400,p=70,canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+ let logo=null,qr=null;
+ if(st.logo_data){try{logo=await loadReceiptImage(st.logo_data)}catch{}}
+ try{let target=upiIntentForAmount(Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0))>0.009?Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0)):(Number(o.total)||0));qr=await loadReceiptImage('https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=10&data='+encodeURIComponent(target))}catch{}
+ let lines=[['Bill',o.billNo],['Date',new Date(o.closed||o.created||Date.now()).toLocaleString()],['Type',(o.type||'')+(o.tableName?' / '+o.tableName:'')],['Customer',o.customer||'Walk-in']];
+ (o.items||[]).forEach(i=>lines.push([i.name+' x'+i.qty,money(i.price*i.qty)]));
+ [['Subtotal',o.sub],['Discount',o.discount],['Tax',o.tax],['Service charge',o.service],['GRAND TOTAL',o.total],['Payment',o.payment],['Cash paid',o.cashPaid??(o.payment==='Cash'?o.paid:0)],['UPI paid',o.upiPaid??(o.payment==='UPI'?o.paid:0)],['Amount paid',o.paid]].forEach(([k,v])=>lines.push([k,typeof v==='number'?money(v):v]));
+ if(Number(o.total)>Number(o.paid))lines.push(['Balance due',money(o.total-o.paid)]);
+ let h=260+(logo?120:0)+lines.length*48+(qr?350:0)+80;canvas.width=w;canvas.height=h;ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.fillStyle='#111';ctx.textBaseline='top';let y=p;
+ if(logo){let r=Math.min(220/logo.width,145/logo.height);ctx.drawImage(logo,(w-logo.width*r)/2,y,logo.width*r,logo.height*r);y+=120}
+ ctx.textAlign='center';ctx.font='bold 44px Arial';ctx.fillText(st.restaurant_name||'MY RESTAURANT',w/2,y);y+=58;
+ ctx.font='25px Arial';[st.address,st.phone?'Phone: '+st.phone:'',st.gstin?'GSTIN: '+st.gstin:'','RECEIPT / TAX INVOICE'].filter(Boolean).forEach(t=>{ctx.fillText(t,w/2,y);y+=36});
+ ctx.textAlign='left';ctx.setLineDash([8,7]);ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(w-p,y);ctx.stroke();ctx.setLineDash([]);y+=28;
+ lines.forEach(([k,v])=>{ctx.font=k==='GRAND TOTAL'?'bold 34px Arial':'27px Arial';ctx.fillText(String(k),p,y);ctx.textAlign='right';ctx.fillText(String(v??''),w-p,y);ctx.textAlign='left';y+=48});
+ if(qr){ctx.drawImage(qr,(w-330)/2,y,330,330);y+=345;ctx.textAlign='center';ctx.font='25px Arial';ctx.fillText('Scan to pay '+money(o.total),w/2,y);y+=38;ctx.fillText('UPI: '+st.upi_id,w/2,y);y+=42}
+ ctx.textAlign='center';ctx.font='bold 30px Arial';ctx.fillText('Thank you! Visit again.',w/2,y);
+ return new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+}
+async function shareBillImage(id){
+ const o=data.orders.find(x=>String(x.id)===String(id));if(!o)return toast('Bill not found');
+ try{
+  const blob=await makeBillImage(o);if(!blob)throw Error('Image তৈরি করা যায়নি');
+  const file=new File([blob],`${o.billNo||'Restaurant-Bill'}.png`,{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+   await navigator.share({files:[file],title:'Restaurant Bill',text:`${o.billNo||'Bill'} - ${money(o.total)}`});
+   toast('Share sheet opened');
+  }else{
+   const url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=`${o.billNo||'Restaurant-Bill'}.png`;a.click();
+   setTimeout(()=>URL.revokeObjectURL(url),30000);
+   const msg=encodeURIComponent(`Bill ${o.billNo||''} | Total ${money(o.total)}. বিলের PNG ইমেজটি ডাউনলোড হয়েছে—WhatsApp-এ attach করুন।`);
+   window.open('https://wa.me/?text='+msg,'_blank');
+   toast('Bill image download হয়েছে। WhatsApp-এ attach করুন।');
+  }
+ }catch(e){if(e.name==='AbortError')return;toast('Share করা যায়নি: '+(e.message||'Try again'))}
+}
+async function printBill(o,format='thermal'){
+ const st=data.settings||{};
+ const a4Zoom=Math.max(0.72,Math.min(1,32/((o.items||[]).length+12)));
+ const rows=(o.items||[]).map(i=>`<tr><td class="item">${esc(i.name)}</td><td class="qty">${i.qty}</td><td class="amt">${money(i.price*i.qty)}</td></tr>`).join('');
+ const content=`<main class="receipt">
+ <header class="receipt-head">${st.logo_data?`<img src="${st.logo_data}" class="receipt-logo"><br>`:''}<h1>${esc(st.restaurant_name||'MY RESTAURANT')}</h1><p>${esc(st.address||'')}${st.phone?'<br>Phone: '+esc(st.phone):''}${st.gstin?'<br>GSTIN: '+esc(st.gstin):''}</p><strong>RECEIPT / TAX INVOICE</strong></header>
+ <hr><section class="meta"><div><span>Bill No.</span><b>${esc(o.billNo||'')}</b></div><div><span>Date</span><b>${new Date(o.closed||o.created||Date.now()).toLocaleString()}</b></div><div><span>Order Type</span><b>${esc(o.type||'')} ${esc(o.tableName||'')}</b></div><div><span>Customer</span><b>${esc(o.customer||'Walk-in')}</b></div></section>
+ <hr><table><thead><tr><th>Item</th><th>Qty</th><th class="amt">Amount</th></tr></thead><tbody>${rows}</tbody></table><hr>
+ <section class="summary"><div><span>Subtotal</span><b>${money(o.sub||0)}</b></div><div><span>Discount</span><b>${money(o.discount||0)}</b></div><div><span>Tax</span><b>${money(o.tax||0)}</b></div><div><span>Service charge</span><b>${money(o.service||0)}</b></div><div class="total"><span>GRAND TOTAL</span><b>${money(o.total||0)}</b></div><div><span>Payment method</span><b>${esc(o.payment||'')}</b></div>${o.cashPaid!=null?`<div><span>Cash</span><b>${money(o.cashPaid)}</b></div>`:''}${o.upiPaid!=null?`<div><span>UPI</span><b>${money(o.upiPaid)}</b></div>`:''}<div><span>Amount paid</span><b>${money(o.paid||0)}</b></div>${(o.total||0)-(o.paid||0)>0?`<div><span>Balance due</span><b>${money((o.total||0)-(o.paid||0))}</b></div>`:''}</section>
+ <div class="receipt-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=8&data=${encodeURIComponent(upiIntentForAmount(Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0))>0.009?Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0)):(Number(o.total)||0)))}"><p><b>Scan to Pay ${money(Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0)))}</b>${st.upi_id?`<br>UPI: ${esc(st.upi_id)}`:''}</p></div><hr><footer><b>Thank you! Visit again.</b><p>Have a great day.</p></footer></main>`;
+
+ // Print from the current tab (no popup and no hidden iframe).
+ let area=document.getElementById('posPrintArea');
+ if(!area){
+   area=document.createElement('div');
+   area.id='posPrintArea';
+   document.body.appendChild(area);
+ }
+ area.innerHTML=content;
+ let style=document.getElementById('posPrintStyle');
+ if(!style){
+   style=document.createElement('style');
+   style.id='posPrintStyle';
+   document.head.appendChild(style);
+ }
+ style.textContent=`
+ @page{size:${format==='thermal'?'80mm auto':'A4'};margin:${format==='thermal'?'2mm':'7mm'}}
+ @media print{
+   body>*{visibility:hidden!important}
+   #posPrintArea,#posPrintArea *{visibility:visible!important}
+   #posPrintArea{display:block!important;position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;padding:0!important;background:#fff!important;color:#111!important}
+   #posPrintArea .receipt{box-sizing:border-box;width:${format==='thermal'?'74mm':'196mm'};max-width:100%;margin:0 auto;zoom:${format==='thermal'?1:a4Zoom};font:${format==='thermal'?'11px':'9.5px'} Arial,sans-serif;color:#111;line-height:1.18}
+   #posPrintArea .receipt-head{text-align:center;color:#111!important;filter:none!important;opacity:1!important}
+   #posPrintArea .receipt-logo{display:inline-block;width:auto;height:auto;max-width:${format==='thermal'?'32mm':'42mm'};max-height:${format==='thermal'?'22mm':'28mm'};object-fit:contain;margin:0 auto 2mm}
+   #posPrintArea h1{font-size:${format==='thermal'?'17px':'20px'};font-weight:800;color:#111!important;margin:1mm 0}
+   #posPrintArea p{line-height:1.2;margin:2px 0;color:#111!important}
+   #posPrintArea header,#posPrintArea footer{text-align:center;color:#111!important}
+   #posPrintArea hr{border:0;border-top:1px solid #777;margin:4px 0}
+   #posPrintArea .meta div,#posPrintArea .summary div{display:flex;justify-content:space-between;gap:6px;margin:2px 0}
+   #posPrintArea table{width:100%;border-collapse:collapse;table-layout:fixed}
+   #posPrintArea th,#posPrintArea td{text-align:left;padding:${format==='thermal'?'3px 2px':'2px 3px'};vertical-align:top;overflow-wrap:anywhere;color:#111!important}
+   #posPrintArea th{border-bottom:1px solid #333}
+   #posPrintArea .qty{width:12%;text-align:center}
+   #posPrintArea .amt{width:28%;text-align:right;white-space:nowrap}
+   #posPrintArea .item{width:60%}
+   #posPrintArea .summary .total{border-top:1px solid #333;padding-top:4px;margin-top:4px;font-size:${format==='thermal'?'14px':'13px'};font-weight:bold}
+   #posPrintArea .receipt-qr{text-align:center;margin:3mm 0 1mm;break-inside:avoid}
+   #posPrintArea .receipt-qr img{width:${format==='thermal'?'32mm':'30mm'};height:${format==='thermal'?'32mm':'30mm'};object-fit:contain;display:block;margin:0 auto}
+   #posPrintArea footer{margin-top:4px}
+   #posPrintArea tr,#posPrintArea footer{break-inside:avoid;page-break-inside:avoid}
+   ${format==='a4'?'#posPrintArea .receipt{max-height:280mm;overflow:hidden}':''}
+ }
+ `;
+ const oldAfter=window.onafterprint;
+ window.onafterprint=()=>{
+   area.innerHTML='';
+   window.onafterprint=oldAfter||null;
+ };
+ try{
+   const qrImg=area.querySelector('.receipt-qr img');
+   if(qrImg){
+     const qrUrl=qrImg.src;
+     const waitForImage=(url,timeout=9000)=>new Promise(resolve=>{
+       const probe=new Image();let finished=false;
+       const done=ok=>{if(finished)return;finished=true;resolve(ok?url:null)};
+       probe.onload=()=>done(true);probe.onerror=()=>done(false);probe.src=url;
+       if(probe.complete&&probe.naturalWidth>0)done(true);
+       setTimeout(()=>done(false),timeout);
+     });
+     let ready=await waitForImage(qrUrl);
+     if(!ready)ready=await waitForImage('https://quickchart.io/qr?size=500&text='+encodeURIComponent(upiIntentForAmount(Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0))>0.009?Math.max(0,(Number(o.total)||0)-(Number(o.paid)||0)):(Number(o.total)||0))),7000);
+     if(ready)qrImg.src=ready;
+     else qrImg.alt='QR unavailable — pay.ajabbazaar.in/?amount='+encodeURIComponent(o.total);
+   }
+   await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   window.focus();window.print();
+ }catch(err){
+   toast('প্রিন্ট চালু করা যায়নি। Ctrl+P চাপ দিয়ে আবার চেষ্টা করুন।');
+ }
+}
+$('settingsForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target);for(let [k,v] of f)data.settings[k]=v;persist();$('brand').textContent=data.settings.restaurant_name;toast('Settings saved')};
+function settingsForm(){let f=$('settingsForm');Object.keys(data.settings).forEach(k=>{if(f.elements[k])f.elements[k].value=data.settings[k]});if(data.settings.logo_data){$('logoPreview').src=data.settings.logo_data;$('logoPreview').style.display='block'}}
+$('settingsForm').onsubmit=e=>{e.preventDefault();let f=new FormData(e.target);['restaurant_name','address','phone','gstin','tax_percent','service_percent','upi_id','upi_name'].forEach(k=>{if(f.has(k))data.settings[k]=f.get(k)});persist();$('brand').textContent=data.settings.restaurant_name||'MY RESTAURANT';syncBrandLogo();toast('Settings saved')};
+$('logoUpload').onchange=e=>{let file=e.target.files[0];if(!file)return;if(file.size>2*1024*1024)return toast('Logo must be under 2 MB');let r=new FileReader();r.onload=()=>{data.settings.logo_data=r.result;$('logoPreview').src=r.result;$('logoPreview').style.display='block';persist();syncBrandLogo();toast('Logo saved')};r.readAsDataURL(file)};
+$('backup').onclick=()=>{let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='restaurant-pos-backup-'+today()+'.json';a.click();URL.revokeObjectURL(a.href)};
+$('restore').onclick=()=>{let f=$('restoreFile').files[0];if(!f)return toast('Choose a JSON backup');if(!confirm('Restore will replace all current data. Continue?'))return;let r=new FileReader();r.onload=()=>{try{let d=JSON.parse(r.result);if(!d.settings||!Array.isArray(d.orders))throw Error('Invalid backup');data=d;persist();initUI();toast('Backup restored')}catch(e){toast('Invalid backup file')}};r.readAsText(f)};
+$('printTest').onclick=()=>{let o={billNo:'TEST-001',created:new Date().toISOString(),type:'Takeaway',tableName:'',customer:'Print Test',items:[{name:'Sample Food',qty:1,price:100}],sub:100,discount:0,tax:0,service:0,total:100,payment:'Cash',paid:100};printBill(o,'thermal')};
+// First setup uses 2005; then the owner chooses a private password stored locally.
+const POS_LOGIN_KEY='restaurant_pos_login_ok_v1', POS_PASSWORD_KEY='restaurant_pos_custom_password_v1';
+function showLogin(){ $('loginGate').style.display='flex';$('loginPassword').value='';$('loginError').style.display='none';$('loginPassword').placeholder=localStorage.getItem(POS_PASSWORD_KEY)?'Enter your password':'First time: enter 2005';setTimeout(()=>$('loginPassword').focus(),80); }
+function hideLogin(){ $('loginGate').style.display='none'; }
+$('loginForm').onsubmit=e=>{e.preventDefault();let entered=$('loginPassword').value,stored=localStorage.getItem(POS_PASSWORD_KEY);if(!stored&&entered==='2005'){let chosen=prompt('Set your own POS password for future logins:');if(!chosen||chosen.length<4){$('loginError').textContent='Password must be at least 4 characters. Try login again.';$('loginError').style.display='block';return;}localStorage.setItem(POS_PASSWORD_KEY,chosen);localStorage.setItem(POS_LOGIN_KEY,'1');hideLogin();toast('Your password is set. Use it next time.');return;}if(stored&&entered===stored){localStorage.setItem(POS_LOGIN_KEY,'1');hideLogin();toast('Login successful');}else{$('loginError').textContent='Incorrect password. Please try again.';$('loginError').style.display='block';$('loginPassword').select();}};
+$('logoutBtn').onclick=()=>{localStorage.removeItem(POS_LOGIN_KEY);showLogin();};
+$('resetLogin').onclick=()=>{if(!confirm('Reset custom login password? Next login will require starter password 2005 and setup again.'))return;localStorage.removeItem(POS_LOGIN_KEY);localStorage.removeItem(POS_PASSWORD_KEY);showLogin();toast('Login reset. Use 2005 to set a new password.');};
+if(localStorage.getItem(POS_LOGIN_KEY)==='1')hideLogin();else showLogin();
+
+data.products.forEach(p=>{if(!Number.isFinite(Number(p.stock)))p.stock=9999;if(p.halfPrice===''||p.halfPrice==null)delete p.halfPrice;if(p.fullPrice===''||p.fullPrice==null)delete p.fullPrice});initUI();restoreDraft();drawCart();
+</script></body></html>
